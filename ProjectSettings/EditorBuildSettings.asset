@@ -8,10 +8,13 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Agora-RTC-Plugin/API-Example/Examples/Basic/JoinChannelVideo/BasicVideoCallScene.unity
     guid: 3f201b178f99f4b41a325391c1b284b8
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/LoadingScene.unity
     guid: f03040a665d91734b823e209dbd6fb5d
   - enabled: 1
-    path: Assets/Scenes/GameScene.unity
+    path: Assets/Scenes/LobbyScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/MainScreen.unity
+    guid: f1e29af91fc11483dae3a2c62f1f1bd1
   m_configObjects: {}

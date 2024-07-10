@@ -1,6 +1,5 @@
 using Photon.Pun;
 using TMPro;
-using UnityEditor;
 using UnityEngine;
 
 public class PlayerInfo : MonoBehaviour
@@ -27,7 +26,6 @@ public class PlayerInfo : MonoBehaviour
     {
         photonView = GetComponent<PhotonView>();
         spriteRenderer = GetComponent<SpriteRenderer>();
-
         playerNameText = transform.GetChild(0).GetComponent<TextMeshPro>();
     }
 
@@ -39,7 +37,6 @@ public class PlayerInfo : MonoBehaviour
     #endregion
 
     #region SETTERS
-
     public void SetChannelName(string channelName) { this.channelName = channelName; }
     public void SetToken(string token) { this.token = token; }
     public void SetColor(Color color) 
@@ -56,7 +53,6 @@ public class PlayerInfo : MonoBehaviour
 
     private void Update()
     {
-        //If the photon view is owned by the player, we will update the local playerdetails and then update the custom properties for that player
         if (photonView.IsMine)
         {
             AddOrDefault(CHANNEL_NAME, channelName);
@@ -68,7 +64,6 @@ public class PlayerInfo : MonoBehaviour
 
             PhotonNetwork.LocalPlayer.SetCustomProperties(playerDetails);
         }
-        //If this photon view is owned by some other player, then we will grab the custom properties from the network and assign it to the local fields
         else
         {
             var player = photonView.Owner;

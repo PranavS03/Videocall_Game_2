@@ -1,15 +1,15 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using Photon.Pun;
 using UnityEngine.UI;
 
 public class PlayerInformationUI : MonoBehaviour
 {
-    [SerializeField] private List<Button> colorButtonsList;
-    [SerializeField] private TMP_InputField nameInputField;
-    [SerializeField] private Button doneButton;
+    [SerializeField] public List<Button> colorButtonsList;
+    [SerializeField] public TMP_InputField nameInputField;
+    [SerializeField] public Button doneButton;
 
     public static event EventHandler OnJoinRoom;
     public static event EventHandler<OnPlayerInfoDoneEventArgs> OnPlayerInfoDone;
@@ -20,8 +20,8 @@ public class PlayerInformationUI : MonoBehaviour
         public string playerName;
     }
 
-    private Color chosenColor;
-    private string playerName;
+    public Color chosenColor;
+    public string playerName;
 
     private void Start()
     {
@@ -29,6 +29,16 @@ public class PlayerInformationUI : MonoBehaviour
         {
             playerName = name;
         });
+
+        foreach (Button colorButton in colorButtonsList)
+        {
+            colorButton.onClick.AddListener(() =>
+            {
+                chosenColor = colorButton.transform.GetChild(0).GetComponent<Image>().color;
+            });
+        }
+
+        Show();
 
         doneButton.onClick.AddListener(() =>
         {
@@ -40,27 +50,28 @@ public class PlayerInformationUI : MonoBehaviour
                 playerName = playerName
             });
 
-            Hide();
+            // Store player info in a static class to persist data across scenes
+            PlayerData.chosenColor = chosenColor;
+            PlayerData.playerName = playerName;
+
+            // Load the second scene
+            PhotonNetwork.LoadLevel("MainScreen");
         });
-
-        foreach(Button colorButton in colorButtonsList)
-        {
-            colorButton.onClick.AddListener(() =>
-            {
-                chosenColor = colorButton.transform.GetChild(0).GetComponent<Image>().color;
-            });
-        }
-
-        Show();
     }
 
-    private void Show()
+    public void Show()
     {
         gameObject.SetActive(true);
     }
 
-    private void Hide()
+    public void Hide()
     {
         gameObject.SetActive(false);
     }
+}
+
+public static class PlayerData
+{
+    public static Color chosenColor;
+    public static string playerName;
 }

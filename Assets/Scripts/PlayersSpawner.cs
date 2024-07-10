@@ -2,12 +2,11 @@ using Photon.Pun;
 using UnityEngine;
 
 [DefaultExecutionOrder(-1)]
-public class PlayersSpawner : MonoBehaviour
+public class PlayersSpawner : MonoBehaviourPunCallbacks
 {
     [SerializeField] private GameObject playerPrefab;
 
     [Header("Boundaries for Spawning the Player")]
-
     [SerializeField] private float minXBoundary;
     [SerializeField] private float maxXBoundary;
     [SerializeField] private float minYBoundary;
@@ -15,30 +14,30 @@ public class PlayersSpawner : MonoBehaviour
 
     private void Start()
     {
-        //Spawn every player at a randomly generated position
-        //Vector2 spawnPosition = new Vector2(Random.Range(minXBoundary, maxXBoundary), Random.Range(minYBoundary, maxYBoundary));
-
-        //GameObject playerGameObject = PhotonNetwork.Instantiate(playerPrefab.name, spawnPosition, Quaternion.identity);
-
-        PlayerInformationUI.OnPlayerInfoDone += PlayerInformationUI_OnPlayerInfoDone;
+        if (PhotonNetwork.IsConnected && PhotonNetwork.InRoom)
+        {
+            Debug.Log("Photon is connected and in a room. Spawning player...");
+            SpawnPlayer();
+        }
+        else
+        {
+            Debug.LogError("Photon is not connected or not in a room.");
+        }
     }
 
-    private void PlayerInformationUI_OnPlayerInfoDone(object sender, PlayerInformationUI.OnPlayerInfoDoneEventArgs e)
-    {
-        GameObject playerGameObject = SpawnPlayer();
-
-        SpriteRenderer playerSpriteRenderer = playerGameObject.GetComponent<SpriteRenderer>();
-        PlayerInfo playerInfo = playerGameObject.GetComponent<PlayerInfo>();
-
-        playerSpriteRenderer.material.color = e.color;
-        playerInfo.SetColor(e.color);
-        playerInfo.SetName(e.playerName);
-    }
-
-    private GameObject SpawnPlayer()
+    private void SpawnPlayer()
     {
         Vector2 spawnPosition = new Vector2(Random.Range(minXBoundary, maxXBoundary), Random.Range(minYBoundary, maxYBoundary));
+        GameObject playerGameObject = PhotonNetwork.Instantiate(playerPrefab.name, spawnPosition, Quaternion.identity);
+        
+        Debug.Log("Player instantiated at position: " + spawnPosition);
 
-        return PhotonNetwork.Instantiate(playerPrefab.name, spawnPosition, Quaternion.identity);
+        PlayerInfo playerInfo = playerGameObject.GetComponent<PlayerInfo>();
+
+        playerInfo.SetColor(PlayerData.chosenColor);
+        playerInfo.SetName(PlayerData.playerName);
+
+        Debug.Log("Player color set to: " + PlayerData.chosenColor);
+        Debug.Log("Player name set to: " + PlayerData.playerName);
     }
 }

@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 
 public class PhotonManager : MonoBehaviourPunCallbacks
 {
-    private const string GAME_SCENE = "GameScene";
+    private const string GAME_SCENE = "GameScreen";
 
     [SerializeField] private string sampleRoomName = "My Room";
 
@@ -37,6 +37,6 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
-        PhotonNetwork.LoadLevel(GAME_SCENE);
+        
     }
 }
