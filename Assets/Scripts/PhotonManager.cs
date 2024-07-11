@@ -1,23 +1,18 @@
 using Photon.Pun;
 using UnityEngine;
 using Photon.Realtime;
-using UnityEngine.SceneManagement;
-
-[DefaultExecutionOrder(-1)]
 
 public class PhotonManager : MonoBehaviourPunCallbacks
 {
-    private const string GAME_SCENE = "GameScreen";
+    private string sampleRoomName = "MyRoom";
 
-    [SerializeField] private string sampleRoomName = "My Room";
-
-    //Connect to the Photon server
-    private void Start()
+    // Connect to the Photon server
+    private void Awake()
     {
         PhotonNetwork.ConnectUsingSettings();
     }
 
-    //When the player is connected to the server, join a lobby
+    // When the player is connected to the server, join a lobby
     public override void OnConnectedToMaster()
     {
         PhotonNetwork.JoinLobby();
@@ -30,13 +25,19 @@ public class PhotonManager : MonoBehaviourPunCallbacks
 
     public void JoinOrCreateRoom()
     {
-        //The player who joined first, creates a sample room and all the players who join later will join that room
-
-        PhotonNetwork.JoinOrCreateRoom(sampleRoomName, new RoomOptions { MaxPlayers = 20, BroadcastPropsChangeToAll = true }, TypedLobby.Default);
+        // The player who joined first creates a sample room, and all players who join later will join that room
+        PhotonNetwork.JoinOrCreateRoom(sampleRoomName, new RoomOptions { MaxPlayers = 20 }, TypedLobby.Default);
     }
 
-    public override void OnJoinedRoom()
+    // Optionally, handle additional logic when a new player enters the room
+    public override void OnPlayerEnteredRoom(Player newPlayer)
     {
-        
+        Debug.Log("New player entered the room: " + newPlayer.NickName);
+    }
+
+    // Optionally, handle cleanup or other logic when a player leaves the room
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        Debug.Log("Player left the room: " + otherPlayer.NickName);
     }
 }

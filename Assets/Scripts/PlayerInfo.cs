@@ -1,8 +1,9 @@
 using Photon.Pun;
+using Photon.Realtime;
 using TMPro;
 using UnityEngine;
 
-public class PlayerInfo : MonoBehaviour
+public class PlayerInfo : MonoBehaviourPunCallbacks
 {
     private const string CHANNEL_NAME = "ChannelName";
     private const string TOKEN = "Token";
@@ -37,56 +38,33 @@ public class PlayerInfo : MonoBehaviour
     #endregion
 
     #region SETTERS
-    public void SetChannelName(string channelName) { this.channelName = channelName; }
-    public void SetToken(string token) { this.token = token; }
-    public void SetColor(Color color) 
-    { 
+    public void SetChannelName(string channelName)
+    {
+        this.channelName = channelName;
+        AddOrUpdateProperty(CHANNEL_NAME, channelName);
+    }
+    public void SetToken(string token)
+    {
+        this.token = token;
+        AddOrUpdateProperty(TOKEN, token);
+    }
+    public void SetColor(Color color)
+    {
         this.color = color;
         spriteRenderer.material.color = color;
+        AddOrUpdateProperty(COLOR_R, color.r);
+        AddOrUpdateProperty(COLOR_G, color.g);
+        AddOrUpdateProperty(COLOR_B, color.b);
     }
-    public void SetName(string name) 
-    { 
-        this.playerName = name; 
+    public void SetName(string name)
+    {
+        this.playerName = name;
         playerNameText.text = name;
+        AddOrUpdateProperty(PLAYER_NAME, name);
     }
     #endregion
 
-    private void Update()
-    {
-        if (photonView.IsMine)
-        {
-            AddOrDefault(CHANNEL_NAME, channelName);
-            AddOrDefault(TOKEN, token);
-            AddOrDefault(COLOR_R, color.r);
-            AddOrDefault(COLOR_G, color.g);
-            AddOrDefault(COLOR_B, color.b);
-            AddOrDefault(PLAYER_NAME, playerName);
-
-            PhotonNetwork.LocalPlayer.SetCustomProperties(playerDetails);
-        }
-        else
-        {
-            var player = photonView.Owner;
-
-            channelName = (string)player.CustomProperties[CHANNEL_NAME];
-            token = (string)player.CustomProperties[TOKEN]; 
-
-            playerName = (string)player.CustomProperties[PLAYER_NAME];
-            playerNameText.text = playerName;
-
-            if (player.CustomProperties[COLOR_R] != null && player.CustomProperties[COLOR_G] != null && player.CustomProperties[COLOR_B] != null)
-            {
-                color = new Color((float)player.CustomProperties[COLOR_R],
-                                  (float)player.CustomProperties[COLOR_G],
-                                  (float)player.CustomProperties[COLOR_B],
-                                  1f);
-            }
-
-            spriteRenderer.material.color = color;
-        }
-    }
-
-    private void AddOrDefault<T>(string key, T value)
+    private void AddOrUpdateProperty(string key, object value)
     {
         if (playerDetails.ContainsKey(key))
         {
@@ -95,6 +73,31 @@ public class PlayerInfo : MonoBehaviour
         else
         {
             playerDetails.Add(key, value);
+        }
+        PhotonNetwork.LocalPlayer.SetCustomProperties(playerDetails);
+    }
+
+    public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
+    {
+        if (targetPlayer != photonView.Owner) return;
+
+        if (changedProps.ContainsKey(CHANNEL_NAME))
+        {
+            channelName = (string)changedProps[CHANNEL_NAME];
+        }
+        if (changedProps.ContainsKey(TOKEN))
+        {
+            token = (string)changedProps[TOKEN];
+        }
+        if (changedProps.ContainsKey(PLAYER_NAME))
+        {
+            playerName = (string)changedProps[PLAYER_NAME];
+            playerNameText.text = playerName;
+        }
+        if (changedProps.ContainsKey(COLOR_R) && changedProps.ContainsKey(COLOR_G) && changedProps.ContainsKey(COLOR_B))
+        {
+            color = new Color((float)changedProps[COLOR_R], (float)changedProps[COLOR_G], (float)changedProps[COLOR_B], 1f);
+            spriteRenderer.material.color = color;
         }
     }
 }

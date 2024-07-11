@@ -1,8 +1,10 @@
 using UnityEngine;
 using Agora.Rtc;
-using Agora_RTC_Plugin.API_Example;
 using UnityEngine.UI;
+using System.Collections;
+using UnityEngine.Networking;
 using System.Collections.Generic;
+using System;
 
 public class AgoraManager : MonoBehaviour
 {
@@ -12,12 +14,12 @@ public class AgoraManager : MonoBehaviour
 
     [SerializeField] private string appID;
     [SerializeField] private GameObject canvas;
+    [SerializeField] private RawImage myViewRawImage; // Serialized field for MyView RawImage
+    private VideoSurface myViewVideoSurface;
+
     [SerializeField] private string tokenBase = "https://agora-token-server-qrv9.onrender.com";
 
     private IRtcEngine RtcEngine;
-    
-    private VideoSurface myView;
-    private VideoSurface remoteView;
 
     private string token = "";
     private string channelName = "Sample";
@@ -30,7 +32,6 @@ public class AgoraManager : MonoBehaviour
     {
         Instance = this;
         usersJoinedInAChannel = new Dictionary<string, List<uint>>();
-        
     }
 
     private void Start()
@@ -39,17 +40,27 @@ public class AgoraManager : MonoBehaviour
         SetBasicConfiguration();
         ToggleCamera(true);
         ToggleMicrophone(true);
-        
-        // Find and setup local video view
-        GameObject go = GameObject.Find("MyView");
-        myView = go.AddComponent<VideoSurface>();
-        RtcEngine.EnableVideo();
+
+        if (myViewRawImage == null)
+        {
+            Debug.LogError("MyView RawImage not assigned in the inspector.");
+        }
+        else
+        {
+            myViewVideoSurface = myViewRawImage.gameObject.GetComponent<VideoSurface>();
+            if (myViewVideoSurface == null)
+            {
+                myViewVideoSurface = myViewRawImage.gameObject.AddComponent<VideoSurface>();
+            }
+
+            RtcEngine.EnableVideo();
+            RtcEngine.EnableLocalVideo(true); // Enable local video
+        }
 
         // Ensure canvas reference is valid
         if (canvas == null)
         {
             Debug.LogError("Canvas reference is not set in AgoraManager.");
-            return;
         }
     }
 
@@ -72,7 +83,6 @@ public class AgoraManager : MonoBehaviour
         RtcEngine.InitEventHandler(handler);
         RtcEngine.EnableVideo();
         RtcEngine.EnableAudio();
-
     }
 
     private void SetBasicConfiguration()
@@ -130,7 +140,7 @@ public class AgoraManager : MonoBehaviour
         // Generate token if not already generated
         if (token.Length == 0)
         {
-            StartCoroutine(HelperClass.FetchToken(tokenBase, channelName, 0, UpdateToken));
+            StartCoroutine(FetchTokenCoroutine(channelName, 0, UpdateToken));
             return;
         }
 
@@ -191,12 +201,12 @@ public class AgoraManager : MonoBehaviour
 
     private string GetRandomChannelName(int length)
     {
-        string characters = "abcdefghijklmnopqrstuvwxyzABCDDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        string characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         string randomChannelName = "";
 
         for (int i = 0; i < length; i++)
         {
-            randomChannelName += characters[Random.Range(0, characters.Length)];
+            randomChannelName += characters[UnityEngine.Random.Range(0, characters.Length)];
         }
 
         return randomChannelName;
@@ -254,8 +264,9 @@ public class AgoraManager : MonoBehaviour
         {
             videoSurface.SetForUser(uid, channelId);
             videoSurface.SetEnable(true);
-            videoSurface.transform.localPosition = new Vector3(-300, 200, 0); // Adjust position
-            videoSurface.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f); // Adjust scale
+            videoSurface.transform.SetParent(myViewRawImage.transform); // Set parent to MyView RawImage
+            videoSurface.transform.localPosition = Vector3.zero; // Center it within MyView
+            videoSurface.transform.localScale = Vector3.one; // Reset scale
         }
         else
         {
@@ -282,8 +293,6 @@ public class AgoraManager : MonoBehaviour
 
             Debug.Log("OnTextureSizeModify: " + width + " " + height);
         };
-
-        videoSurface.SetEnable(true);
     }
 
     private VideoSurface MakeImageSurface(string goName)
@@ -359,23 +368,23 @@ public class AgoraManager : MonoBehaviour
         {
             agoraManager.connectionState = state;
         }
-       
+    }
 
     #endregion
-    }
-      public void ToggleCamera(bool enable)
+
+    public void ToggleCamera(bool enable)
     {
         Debug.Log("ToggleCamera: " + enable);
         isCameraOn = enable;
         if (isCameraOn)
         {
             Debug.Log("Camera is on");
-            RtcEngine.EnableLocalVideo(true);// Enable local video
+            RtcEngine.EnableLocalVideo(true); // Enable local video
         }
         else
         {
             Debug.Log("Camera is off");
-            RtcEngine.EnableLocalVideo(false);// Disable local video
+            RtcEngine.EnableLocalVideo(false); // Disable local video
         }
     }
 
@@ -402,5 +411,24 @@ public class AgoraManager : MonoBehaviour
         }
     }
 
-}
+    private IEnumerator FetchTokenCoroutine(string channelName, int userId, Action<string> onTokenFetched)
+    {
+        string url = $"{tokenBase}?channel={channelName}&userId={userId}";
 
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            yield return webRequest.SendWebRequest();
+
+            if (webRequest.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"Failed to fetch token: {webRequest.error}");
+            }
+            else
+            {
+                onTokenFetched?.Invoke(webRequest.downloadHandler.text);
+            }
+        }
+
+    }
+    
+}
